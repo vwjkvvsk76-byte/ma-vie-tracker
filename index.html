@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0f0f12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ma vie">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Ma vie</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: #0f0f12; color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+  body { padding-bottom: 80px; padding-top: env(safe-area-inset-top); min-height: 100vh; }
+
+  /* Header */
+  .header { padding: 16px 18px 12px; display: flex; justify-content: space-between; align-items: baseline; }
+  .header h1 { margin: 0; font-size: 22px; font-weight: 600; }
+  .header .date { font-size: 13px; color: #71717a; text-transform: capitalize; }
+
+  /* Sections */
+  .sec { display: none; padding: 0 14px 20px; }
+  .sec.active { display: block; }
+
+  /* Cards */
+  .card { background: #18181b; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; border: 0.5px solid #27272a; }
+  .card-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .card-h h3 { margin: 0; font-size: 12px; font-weight: 600; color: #71717a; text-transform: uppercase; letter-spacing: 0.6px; }
+  .pill { font-size: 11px; padding: 3px 10px; border-radius: 999px; background: #27272a; color: #d4d4d8; font-weight: 500; }
+  .pill-info { background: #1e3a5f; color: #7dd3fc; }
+  .pill-success { background: #14532d; color: #86efac; }
+
+  /* Metrics */
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .metric { background: #18181b; border-radius: 14px; padding: 14px; border: 0.5px solid #27272a; }
+  .metric-label { font-size: 11px; color: #71717a; margin: 0 0 6px; display: flex; align-items: center; gap: 5px; }
+  .metric-label i { font-style: normal; }
+  .metric-value { font-size: 22px; font-weight: 600; margin: 0; }
+  .metric-sub { font-size: 11px; color: #52525b; margin: 2px 0 0; }
+  .bar { height: 4px; background: #27272a; border-radius: 999px; overflow: hidden; margin-top: 8px; }
+  .bar-fill { height: 100%; background: #3b82f6; transition: width 0.4s; border-radius: 999px; }
+
+  /* Chart */
+  .chart-mini { height: 60px; display: flex; align-items: flex-end; gap: 5px; margin-top: 8px; }
+  .chart-bar { flex: 1; background: #3b82f6; border-radius: 3px 3px 0 0; min-height: 4px; opacity: 0.5; transition: opacity 0.2s; }
+  .chart-bar.today { opacity: 1; }
+  .chart-labels { display: flex; gap: 5px; margin-top: 6px; font-size: 10px; color: #52525b; }
+  .chart-labels span { flex: 1; text-align: center; }
+
+  /* Pie */
+  .pie-legend { padding: 4px 0; }
+  .pie-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; }
+  .pie-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+
+  /* Inputs */
+  input, select, textarea, button { font-family: inherit; font-size: 15px; }
+  input[type=text], input[type=number], select {
+    background: #27272a; border: 0.5px solid #3f3f46; color: #f4f4f5; padding: 11px 12px; border-radius: 10px; width: 100%; outline: none; transition: border-color 0.15s;
+  }
+  input:focus, select:focus { border-color: #3b82f6; }
+  input::placeholder { color: #52525b; }
+
+  button {
+    background: #27272a; color: #f4f4f5; border: 0.5px solid #3f3f46; padding: 11px 16px; border-radius: 10px; cursor: pointer; transition: background 0.15s;
+    -webkit-appearance: none;
+  }
+  button:hover { background: #3f3f46; }
+  button:active { transform: scale(0.97); }
+  .btn-primary { background: #3b82f6; border-color: #3b82f6; color: white; font-weight: 600; }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-icon { padding: 11px; min-width: 44px; display: flex; align-items: center; justify-content: center; }
+
+  /* Search */
+  .search-box { position: relative; margin-bottom: 12px; }
+  .search-box input { padding-right: 38px; }
+  .search-box .search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #52525b; pointer-events: none; }
+
+  /* Results */
+  .results { background: #18181b; border-radius: 10px; border: 0.5px solid #27272a; max-height: 280px; overflow-y: auto; -webkit-overflow-scrolling: touch; margin-bottom: 10px; }
+  .result-item { padding: 12px 14px; border-bottom: 0.5px solid #27272a; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .result-item:last-child { border-bottom: 0; }
+  .result-item:active { background: #27272a; }
+  .result-name { font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .result-kcal { font-size: 11px; color: #71717a; flex-shrink: 0; }
+
+  /* Item rows */
+  .item-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 0.5px solid #27272a; }
+  .item-row:last-child { border-bottom: 0; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-size: 14px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item-meta { font-size: 11px; color: #71717a; margin: 2px 0 0; }
+  .item-value { font-size: 14px; font-weight: 500; flex-shrink: 0; }
+  .icon-btn { background: transparent; border: 0; color: #52525b; padding: 6px; cursor: pointer; flex-shrink: 0; }
+  .icon-btn:hover { color: #ef4444; background: transparent; }
+
+  /* Habits */
+  .habit-check { width: 24px; height: 24px; border: 1.5px solid #3f3f46; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+  .habit-check.done { background: #22c55e; border-color: #22c55e; color: white; }
+  .habit.done .item-name { text-decoration: line-through; color: #71717a; }
+
+  /* Macros */
+  .macros { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .macro { background: #27272a; padding: 10px 8px; border-radius: 10px; text-align: center; }
+  .macro-label { font-size: 10px; color: #71717a; margin: 0 0 3px; }
+  .macro-value { font-size: 15px; font-weight: 600; margin: 0; }
+
+  /* Add bar */
+  .add-bar { display: flex; gap: 8px; margin-top: 12px; }
+  .add-bar input { flex: 1; }
+
+  /* Empty */
+  .empty { font-size: 12px; color: #52525b; text-align: center; padding: 18px 0; }
+  .loading { text-align: center; padding: 14px; font-size: 12px; color: #71717a; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: flex-end; z-index: 100; animation: fade 0.2s; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #18181b; border-radius: 18px 18px 0 0; padding: 20px 18px 28px; width: 100%; border-top: 0.5px solid #27272a; padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+  .modal h4 { margin: 0 0 4px; font-size: 17px; font-weight: 600; }
+  .modal p.modal-sub { font-size: 12px; color: #71717a; margin: 0 0 16px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .modal-actions button { flex: 1; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Bottom nav */
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15,15,18,0.92); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: 0.5px solid #27272a; display: flex; padding: 8px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50; }
+  .nav-btn { flex: 1; background: transparent; border: 0; color: #71717a; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; }
+  .nav-btn.active { color: #3b82f6; }
+  .nav-btn:hover { background: transparent; }
+  .nav-btn svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Video */
+  .video-zone { background: #18181b; border-radius: 14px; padding: 20px; text-align: center; border: 0.5px dashed #3f3f46; }
+  .video-zone video { width: 100%; max-height: 240px; border-radius: 10px; margin-top: 10px; background: #000; }
+  .video-controls { display: flex; gap: 8px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+  .rec-dot { display: inline-block; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; margin-right: 6px; animation: blink 1s infinite; }
+  @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.2; } }
+
+  /* Install banner */
+  .install-banner { background: #1e3a5f; color: #7dd3fc; padding: 10px 14px; border-radius: 10px; margin: 0 14px 12px; font-size: 12px; display: none; align-items: center; gap: 8px; }
+  .install-banner.show { display: flex; }
+  .install-banner button { background: #3b82f6; color: white; border: 0; padding: 6px 12px; font-size: 12px; border-radius: 6px; margin-left: auto; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Ma vie</h1>
+  <span class="date" id="d-date"></span>
+</div>
+
+<div class="install-banner" id="install-banner">
+  <span>📲 Installer l'app sur ton écran d'accueil</span>
+  <button onclick="installApp()">Installer</button>
+</div>
+
+<!-- ACCUEIL -->
+<section class="sec active" id="s-home">
+  <div class="metrics">
+    <div class="metric">
+      <p class="metric-label">🔥 Calories</p>
+      <p class="metric-value" id="m-cal">0</p>
+      <p class="metric-sub">kcal aujourd'hui</p>
+    </div>
+    <div class="metric">
+      <p class="metric-label">✅ Habitudes</p>
+      <p class="metric-value" id="m-hab">0/0</p>
+      <div class="bar"><div class="bar-fill" id="m-hab-bar" style="width:0%"></div></div>
+    </div>
+    <div class="metric">
+      <p class="metric-label">💰 Dépenses</p>
+      <p class="metric-value" id="m-exp">0,00 €</p>
+      <p class="metric-sub" id="m-exp-sub">0 transaction</p>
+    </div>
+    <div class="metric">
+      <p class="metric-label">📚 Apprentissage</p>
+      <p class="metric-value" id="m-learn">0 min</p>
+      <p class="metric-sub" id="m-learn-sub">aujourd'hui</p>
+    </div>
+  </div>
+
+  <div style="height: 12px;"></div>
+
+  <div class="card">
+    <div class="card-h"><h3>Calories sur 7 jours</h3></div>
+    <div class="chart-mini" id="chart-cal"></div>
+    <div class="chart-labels" id="chart-cal-labels"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Dépenses par catégorie</h3></div>
+    <div id="pie-exp"><p class="empty">Aucune dépense aujourd'hui</p></div>
+  </div>
+</section>
+
+<!-- ASSIETTE -->
+<section class="sec" id="s-food">
+  <div class="card">
+    <div class="search-box">
+      <input type="text" id="food-search" placeholder="Rechercher un aliment..." autocomplete="off" />
+      <span class="search-icon">🔍</span>
+    </div>
+    <div class="results" id="food-results" style="display:none;"></div>
+    <p style="font-size: 11px; color: #52525b; margin: 6px 0 0;">Données depuis OpenFoodFacts (gratuit)</p>
+  </div>
+
+  <div class="card">
+    <div class="card-h">
+      <h3>Aujourd'hui</h3>
+      <span class="pill pill-info" id="food-total">0 kcal</span>
+    </div>
+    <div id="food-list"></div>
+    <div class="macros">
+      <div class="macro"><p class="macro-label">Protéines</p><p class="macro-value" id="mac-p">0g</p></div>
+      <div class="macro"><p class="macro-label">Glucides</p><p class="macro-value" id="mac-g">0g</p></div>
+      <div class="macro"><p class="macro-label">Lipides</p><p class="macro-value" id="mac-l">0g</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- HABITUDES -->
+<section class="sec" id="s-hab">
+  <div class="card">
+    <div class="card-h"><h3>Check-ups du jour</h3></div>
+    <div id="hab-list"></div>
+    <div class="add-bar">
+      <input type="text" id="hab-input" placeholder="Nouvelle habitude" />
+      <button class="btn-icon btn-primary" onclick="addHab()">+</button>
+    </div>
+  </div>
+</section>
+
+<!-- APPRENTISSAGE -->
+<section class="sec" id="s-learn">
+  <div class="card">
+    <div class="card-h"><h3>Sujets en cours</h3></div>
+    <div id="learn-list"></div>
+    <div class="add-bar" style="flex-wrap:wrap;">
+      <input type="text" id="learn-name" placeholder="Sujet (ex: Anglais)" style="flex:2;min-width:140px;" />
+      <input type="number" id="learn-target" placeholder="min/jour" min="5" value="30" style="flex:1;min-width:80px;" />
+      <button class="btn-primary" onclick="addLearn()" style="width:100%;margin-top:4px;">Ajouter un sujet</button>
+    </div>
+    <p style="font-size: 11px; color: #52525b; margin: 10px 0 0;">Tape sur + pour ajouter 10 min de pratique</p>
+  </div>
+</section>
+
+<!-- DÉPENSES -->
+<section class="sec" id="s-exp">
+  <div class="card">
+    <div class="card-h">
+      <h3>Aujourd'hui</h3>
+      <span class="pill pill-info" id="exp-total">0,00 €</span>
+    </div>
+    <div id="exp-list"></div>
+    <div class="add-bar" style="flex-wrap:wrap;">
+      <input type="text" id="exp-label" placeholder="Quoi ?" style="flex:2;min-width:120px;" />
+      <input type="number" id="exp-amount" placeholder="€" min="0" step="0.01" style="flex:1;min-width:70px;" />
+      <select id="exp-cat" style="flex:1;min-width:110px;">
+        <option value="Courses">Courses</option>
+        <option value="Restaurant">Restaurant</option>
+        <option value="Transport">Transport</option>
+        <option value="Loisirs">Loisirs</option>
+        <option value="Logement">Logement</option>
+        <option value="Santé">Santé</option>
+        <option value="Autre">Autre</option>
+      </select>
+      <button class="btn-primary" onclick="addExp()" style="width:100%;margin-top:4px;">Ajouter dépense</button>
+    </div>
+  </div>
+</section>
+
+<!-- VIDÉO -->
+<section class="sec" id="s-video">
+  <div class="card">
+    <div class="card-h"><h3>Résumé vidéo du jour (15s)</h3></div>
+    <div class="video-zone">
+      <video id="vid-preview" playsinline muted></video>
+      <div class="video-controls">
+        <button id="btn-rec" onclick="startRec()">🎥 Lancer caméra</button>
+        <button id="btn-stop" onclick="stopRec()" disabled>⏹️ Arrêter</button>
+        <button id="btn-play" onclick="playRec()" disabled>▶️ Revoir</button>
+      </div>
+      <p id="vid-status" style="font-size: 12px; color: #71717a; margin: 12px 0 0;">15 secondes max — auto-stop</p>
+    </div>
+  </div>
+</section>
+
+<!-- Modal aliment -->
+<div class="modal-overlay" id="food-modal">
+  <div class="modal">
+    <h4 id="m-food-name">Aliment</h4>
+    <p class="modal-sub" id="m-food-100">Pour 100g</p>
+    <input type="number" id="m-food-qty" placeholder="grammes" min="1" value="100" />
+    <div class="modal-actions">
+      <button onclick="closeModal()">Annuler</button>
+      <button class="btn-primary" onclick="confirmAdd()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-tab="home"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg><span>Accueil</span></button>
+  <button class="nav-btn" data-tab="food"><svg viewBox="0 0 24 24"><path d="M3 11h18"/><path d="M5 11a7 7 0 0114 0"/><path d="M5 11v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg><span>Assiette</span></button>
+  <button class="nav-btn" data-tab="hab"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>Habitudes</span></button>
+  <button class="nav-btn" data-tab="learn"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span>Apprendre</span></button>
+  <button class="nav-btn" data-tab="exp"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Dépenses</span></button>
+  <button class="nav-btn" data-tab="video"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg><span>Vidéo</span></button>
+</nav>
+
+<script>
+// ============ STATE ============
+const STORAGE_KEY = 'mavie_v1';
+const TODAY = new Date().toISOString().slice(0, 10);
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return defaultState();
+    const parsed = JSON.parse(saved);
+    // Reset jour si on a changé de date
+    if (parsed.date !== TODAY) {
+      // Sauvegarde l'historique du jour précédent
+      if (!parsed.history) parsed.history = {};
+      parsed.history[parsed.date] = {
+        cal: (parsed.food || []).reduce((s, f) => s + (f.kcal100 * f.qty / 100), 0),
+        habits: (parsed.habits || []).filter(h => h.done).length,
+        totalHabits: (parsed.habits || []).length,
+        exp: (parsed.expenses || []).reduce((s, e) => s + e.amount, 0),
+        learn: (parsed.learn || []).reduce((s, l) => s + (l.today || 0), 0)
+      };
+      // Reset des données quotidiennes
+      parsed.date = TODAY;
+      parsed.food = [];
+      parsed.expenses = [];
+      (parsed.habits || []).forEach(h => h.done = false);
+      (parsed.learn || []).forEach(l => l.today = 0);
+    }
+    return parsed;
+  } catch (e) {
+    return defaultState();
+  }
+}
+
+function defaultState() {
+  return {
+    date: TODAY,
+    food: [],
+    habits: [
+      { id: 1, label: 'Sport / activité physique', done: false },
+      { id: 2, label: 'Lecture 20 min', done: false },
+      { id: 3, label: 'Boire 2L d\'eau', done: false }
+    ],
+    learn: [],
+    expenses: [],
+    history: {}
+  };
+}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch (e) { console.warn('Save failed', e); }
+}
+
+// ============ DATE HEADER ============
+document.getElementById('d-date').textContent =
+  new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' });
+
+// ============ NAVIGATION ============
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('s-' + btn.dataset.tab).classList.add('active');
+    window.scrollTo(0, 0);
+  });
+});
+
+// ============ HELPERS ============
+function fmtEur(n) {
+  return n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
+function sumCal() { return Math.round(state.food.reduce((s, f) => s + (f.kcal100 * f.qty / 100), 0)); }
+function sumMacro(key) { return Math.round(state.food.reduce((s, f) => s + ((f[key] || 0) * f.qty / 100), 0)); }
+function sumExp() { return state.expenses.reduce((s, e) => s + e.amount, 0); }
+function sumLearn() { return state.learn.reduce((s, l) => s + (l.today || 0), 0); }
+function habDone() { return state.habits.filter(h => h.done).length; }
+
+// ============ RENDER DASHBOARD ============
+function renderHome() {
+  const cal = sumCal();
+  document.getElementById('m-cal').textContent = cal.toLocaleString('fr-FR');
+  document.getElementById('m-hab').textContent = habDone() + '/' + state.habits.length;
+  const pct = state.habits.length === 0 ? 0 : Math.round((habDone() / state.habits.length) * 100);
+  document.getElementById('m-hab-bar').style.width = pct + '%';
+  document.getElementById('m-exp').textContent = fmtEur(sumExp());
+  document.getElementById('m-exp-sub').textContent = state.expenses.length + ' transaction' + (state.expenses.length > 1 ? 's' : '');
+  document.getElementById('m-learn').textContent = sumLearn() + ' min';
+
+  // Graphe 7 jours
+  const labels = ['L','M','M','J','V','S','D'];
+  const histArr = [];
+  const labelArr = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const idx = (d.getDay() + 6) % 7;
+    labelArr.push(labels[idx]);
+    if (i === 0) histArr.push(cal);
+    else histArr.push(Math.round((state.history && state.history[key] && state.history[key].cal) || 0));
+  }
+  const max = Math.max(...histArr, 100);
+  document.getElementById('chart-cal').innerHTML = histArr.map((v, i) =>
+    '<div class="chart-bar' + (i === 6 ? ' today' : '') + '" style="height:' + Math.max(4, (v / max) * 100) + '%" title="' + v + ' kcal"></div>'
+  ).join('');
+  document.getElementById('chart-cal-labels').innerHTML = labelArr.map(l => '<span>' + l + '</span>').join('');
+
+  // Pie dépenses
+  const pieEl = document.getElementById('pie-exp');
+  if (state.expenses.length === 0) {
+    pieEl.innerHTML = '<p class="empty">Aucune dépense aujourd\'hui</p>';
+  } else {
+    const byCat = {};
+    state.expenses.forEach(e => { byCat[e.cat] = (byCat[e.cat] || 0) + e.amount; });
+    const total = Object.values(byCat).reduce((s, v) => s + v, 0);
+    const colors = {
+      'Courses': '#22c55e', 'Restaurant': '#f97316', 'Transport': '#3b82f6',
+      'Loisirs': '#a855f7', 'Logement': '#71717a', 'Santé': '#ec4899', 'Autre': '#eab308'
+    };
+    pieEl.innerHTML = '<div class="pie-legend">' + Object.entries(byCat).sort((a,b) => b[1] - a[1]).map(([cat, amt]) => {
+      const p = Math.round((amt / total) * 100);
+      return '<div class="pie-item"><span><span class="pie-dot" style="background:' + (colors[cat] || '#888') + '"></span>' + cat + '</span><span style="color:#71717a">' + fmtEur(amt) + ' · ' + p + '%</span></div>';
+    }).join('') + '</div>';
+  }
+}
+
+// ============ FOOD ============
+function renderFood() {
+  const list = document.getElementById('food-list');
+  if (state.food.length === 0) {
+    list.innerHTML = '<p class="empty">Rien dans ton assiette pour l\'instant</p>';
+  } else {
+    list.innerHTML = state.food.map((f, i) => {
+      const kcal = Math.round(f.kcal100 * f.qty / 100);
+      return '<div class="item-row"><div class="item-info"><p class="item-name">' + escapeHtml(f.name) + '</p><p class="item-meta">' + f.qty + ' g</p></div><span class="item-value">' + kcal + ' kcal</span><button class="icon-btn" onclick="delFood(' + i + ')" aria-label="Supprimer">✕</button></div>';
+    }).join('');
+  }
+  document.getElementById('food-total').textContent = sumCal() + ' kcal';
+  document.getElementById('mac-p').textContent = sumMacro('protein') + 'g';
+  document.getElementById('mac-g').textContent = sumMacro('carbs') + 'g';
+  document.getElementById('mac-l').textContent = sumMacro('fat') + 'g';
+  renderHome();
+  save();
+}
+
+let searchTimer = null;
+let lastResults = [];
+let pendingFood = null;
+
+document.getElementById('food-search').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  const q = e.target.value.trim();
+  const box = document.getElementById('food-results');
+  if (q.length < 2) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  box.innerHTML = '<p class="loading">Recherche...</p>';
+  searchTimer = setTimeout(() => searchFood(q), 400);
+});
+
+async function searchFood(q) {
+  const box = document.getElementById('food-results');
+  try {
+    const url = 'https://world.openfoodfacts.org/cgi/search.pl?search_terms=' + encodeURIComponent(q) + '&search_simple=1&action=process&json=1&page_size=15&lc=fr&fields=product_name,product_name_fr,nutriments,brands';
+    const r = await fetch(url);
+    const data = await r.json();
+    const items = (data.products || []).filter(p => {
+      const n = p.nutriments || {};
+      const name = p.product_name_fr || p.product_name;
+      const kcal = n['energy-kcal_100g'] || n.energy_kcal_100g;
+      return name && kcal;
+    }).slice(0, 12);
+
+    if (items.length === 0) {
+      box.innerHTML = '<p class="empty">Aucun résultat. Essaie un autre terme.</p>';
+      return;
+    }
+    lastResults = items;
+    box.innerHTML = items.map((p, i) => {
+      const name = (p.product_name_fr || p.product_name).slice(0, 60);
+      const brand = p.brands ? ' · ' + p.brands.split(',')[0] : '';
+      const kcal = Math.round(p.nutriments['energy-kcal_100g'] || p.nutriments.energy_kcal_100g || 0);
+      return '<div class="result-item" onclick="pickFood(' + i + ')"><span class="result-name">' + escapeHtml(name + brand) + '</span><span class="result-kcal">' + kcal + ' kcal/100g</span></div>';
+    }).join('');
+  } catch (err) {
+    box.innerHTML = '<p class="empty">Erreur réseau. Vérifie ta connexion.</p>';
+  }
+}
+
+function pickFood(i) {
+  const p = lastResults[i];
+  const n = p.nutriments || {};
+  pendingFood = {
+    name: (p.product_name_fr || p.product_name).slice(0, 60),
+    kcal100: Math.round(n['energy-kcal_100g'] || n.energy_kcal_100g || 0),
+    protein: Math.round((n.proteins_100g || 0) * 10) / 10,
+    carbs: Math.round((n.carbohydrates_100g || 0) * 10) / 10,
+    fat: Math.round((n.fat_100g || 0) * 10) / 10
+  };
+  document.getElementById('m-food-name').textContent = pendingFood.name;
+  document.getElementById('m-food-100').textContent =
+    'Pour 100g : ' + pendingFood.kcal100 + ' kcal · ' + pendingFood.protein + 'g P · ' + pendingFood.carbs + 'g G · ' + pendingFood.fat + 'g L';
+  document.getElementById('m-food-qty').value = 100;
+  document.getElementById('food-modal').classList.add('show');
+  document.getElementById('food-results').style.display = 'none';
+  document.getElementById('food-search').value = '';
+}
+
+function closeModal() {
+  document.getElementById('food-modal').classList.remove('show');
+  pendingFood = null;
+}
+
+function confirmAdd() {
+  if (!pendingFood) return;
+  const qty = parseInt(document.getElementById('m-food-qty').value, 10);
+  if (!qty || qty < 1) return;
+  state.food.push({ ...pendingFood, qty });
+  closeModal();
+  renderFood();
+}
+
+function delFood(i) { state.food.splice(i, 1); renderFood(); }
+
+// ============ HABITS ============
+function renderHab() {
+  const list = document.getElementById('hab-list');
+  if (state.habits.length === 0) {
+    list.innerHTML = '<p class="empty">Ajoute ta première habitude</p>';
+  } else {
+    list.innerHTML = state.habits.map((h, i) =>
+      '<div class="item-row habit ' + (h.done ? 'done' : '') + '"><div class="habit-check ' + (h.done ? 'done' : '') + '" onclick="toggleHab(' + i + ')">' + (h.done ? '✓' : '') + '</div><span class="item-name" style="flex:1">' + escapeHtml(h.label) + '</span><button class="icon-btn" onclick="delHab(' + i + ')" aria-label="Supprimer">✕</button></div>'
+    ).join('');
+  }
+  renderHome();
+  save();
+}
+
+function addHab() {
+  const v = document.getElementById('hab-input').value.trim();
+  if (!v) return;
+  state.habits.push({ id: Date.now(), label: v, done: false });
+  document.getElementById('hab-input').value = '';
+  renderHab();
+}
+function toggleHab(i) { state.habits[i].done = !state.habits[i].done; renderHab(); }
+function delHab(i) { if(confirm('Supprimer cette habitude ?')) { state.habits.splice(i, 1); renderHab(); } }
+
+// ============ LEARN ============
+function renderLearn() {
+  const list = document.getElementById('learn-list');
+  if (state.learn.length === 0) {
+    list.innerHTML = '<p class="empty">Ajoute un sujet à apprendre</p>';
+  } else {
+    list.innerHTML = state.learn.map((l, i) => {
+      const today = l.today || 0;
+      const p = Math.min(100, Math.round((today / l.target) * 100));
+      const reached = today >= l.target;
+      return '<div class="item-row"><div class="item-info"><p class="item-name">' + escapeHtml(l.name) + ' ' + (reached ? '<span class="pill pill-success">✓</span>' : '') + '</p><p class="item-meta">' + today + ' / ' + l.target + ' min</p><div class="bar" style="margin-top:6px"><div class="bar-fill" style="width:' + p + '%' + (reached ? ';background:#22c55e' : '') + '"></div></div></div><button class="icon-btn" onclick="addTime(' + i + ')" style="font-size:18px;color:#3b82f6" aria-label="Ajouter 10 min">+10</button><button class="icon-btn" onclick="delLearn(' + i + ')" aria-label="Supprimer">✕</button></div>';
+    }).join('');
+  }
+  renderHome();
+  save();
+}
+
+function addLearn() {
+  const name = document.getElementById('learn-name').value.trim();
+  const target = parseInt(document.getElementById('learn-target').value, 10);
+  if (!name || !target || target < 1) return;
+  state.learn.push({ id: Date.now(), name, target, today: 0 });
+  document.getElementById('learn-name').value = '';
+  document.getElementById('learn-target').value = 30;
+  renderLearn();
+}
+function addTime(i) { state.learn[i].today = (state.learn[i].today || 0) + 10; renderLearn(); }
+function delLearn(i) { if(confirm('Supprimer ce sujet ?')) { state.learn.splice(i, 1); renderLearn(); } }
+
+// ============ EXPENSES ============
+function renderExp() {
+  const list = document.getElementById('exp-list');
+  if (state.expenses.length === 0) {
+    list.innerHTML = '<p class="empty">Aucune dépense pour l\'instant</p>';
+  } else {
+    list.innerHTML = state.expenses.map((e, i) =>
+      '<div class="item-row"><div class="item-info"><p class="item-name">' + escapeHtml(e.label) + '</p><p class="item-meta">' + e.cat + '</p></div><span class="item-value">' + fmtEur(e.amount) + '</span><button class="icon-btn" onclick="delExp(' + i + ')" aria-label="Supprimer">✕</button></div>'
+    ).join('');
+  }
+  document.getElementById('exp-total').textContent = fmtEur(sumExp());
+  renderHome();
+  save();
+}
+
+function addExp() {
+  const label = document.getElementById('exp-label').value.trim();
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const cat = document.getElementById('exp-cat').value;
+  if (!label || !amount || amount <= 0) return;
+  state.expenses.push({ label, amount, cat });
+  document.getElementById('exp-label').value = '';
+  document.getElementById('exp-amount').value = '';
+  renderExp();
+}
+function delExp(i) { state.expenses.splice(i, 1); renderExp(); }
+
+// ============ VIDEO ============
+let mediaStream = null, mediaRecorder = null, chunks = [], recordedBlob = null;
+let recTimer = null, recCountdown = null;
+
+async function startRec() {
+  const status = document.getElementById('vid-status');
+  const vid = document.getElementById('vid-preview');
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true });
+    vid.srcObject = mediaStream;
+    vid.muted = true;
+    vid.play();
+    chunks = [];
+    mediaRecorder = new MediaRecorder(mediaStream);
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      recordedBlob = new Blob(chunks, { type: 'video/webm' });
+      document.getElementById('btn-play').disabled = false;
+      status.textContent = 'Vidéo enregistrée ! Tape sur "Revoir"';
+    };
+    mediaRecorder.start();
+    document.getElementById('btn-rec').disabled = true;
+    document.getElementById('btn-stop').disabled = false;
+    document.getElementById('btn-play').disabled = true;
+    let s = 15;
+    status.innerHTML = '<span class="rec-dot"></span>Enregistrement... ' + s + 's';
+    recCountdown = setInterval(() => {
+      s--;
+      if (s >= 0) status.innerHTML = '<span class="rec-dot"></span>Enregistrement... ' + s + 's';
+    }, 1000);
+    recTimer = setTimeout(() => stopRec(), 15000);
+  } catch (err) {
+    status.textContent = 'Caméra indisponible : ' + (err.message || 'autorise l\'accès');
+  }
+}
+
+function stopRec() {
+  if (recTimer) { clearTimeout(recTimer); recTimer = null; }
+  if (recCountdown) { clearInterval(recCountdown); recCountdown = null; }
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
+  document.getElementById('btn-rec').disabled = false;
+  document.getElementById('btn-stop').disabled = true;
+}
+
+function playRec() {
+  if (!recordedBlob) return;
+  const vid = document.getElementById('vid-preview');
+  vid.srcObject = null;
+  vid.src = URL.createObjectURL(recordedBlob);
+  vid.muted = false;
+  vid.controls = true;
+  vid.play();
+}
+
+// ============ INSTALL PROMPT ============
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('show');
+});
+
+function installApp() {
+  if (!deferredPrompt) {
+    alert('Sur iPhone : appuie sur le bouton Partager en bas du navigateur Safari, puis "Sur l\'écran d\'accueil".\n\nSur Android : ouvre le menu (⋮) de Chrome puis "Installer l\'application".');
+    return;
+  }
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => {
+    deferredPrompt = null;
+    document.getElementById('install-banner').classList.remove('show');
+  });
+}
+
+// ============ SECURITY ============
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ============ SERVICE WORKER ============
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+// ============ INIT ============
+renderFood();
+renderHab();
+renderLearn();
+renderExp();
+</script>
+</body>
+</html>
